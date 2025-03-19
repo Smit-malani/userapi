@@ -3,7 +3,6 @@ const router = express.Router()
 const dbConnect = require('../config/dbConnect')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
-const verifyUser = require('../middlewares/auth')
 
 router.post('/register', async (req, res) => {
     try {
@@ -11,7 +10,7 @@ router.post('/register', async (req, res) => {
         const { profile_pic } = req.files
 
         if (!name || !email || !password || !profile_pic || !role) {
-            res.status(400).send('All field must required')
+            return res.status(400).send('All field must required')
         }
 
         let uploadPath = __dirname + /upload/ + profile_pic.name
@@ -59,23 +58,19 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body
-
+        
         if (!email || !password) {
             return res.status(400).send('please provide both email and password')
         }
 
         const connection = await dbConnect()
-        const sql = 'SELECT * FROM user WHERE email = ?'
+        const sql = 'SELECT * FROM user WHERE email = ? AND deleted_at IS NULL'
         connection.query(sql, [email], async (err, result) => {
             if (err) {
                 console.log('Error while fething user', err)
                 res.status(500).send('Server error')
                 connection.release()
                 return
-            }
-
-            if (result[0].deleted_at) {
-                return res.status(404).json({ message: 'User not found' })
             }
 
             if (result.length == 0) {
@@ -88,7 +83,6 @@ router.post('/login', async (req, res) => {
             if (!isMatch) {
                 return res.status(400).send('Invalid credentials')
             }
-
 
             const token = jwt.sign(
                 {
@@ -110,7 +104,7 @@ router.post('/login', async (req, res) => {
     }
 })
 
-router.patch('/userupdate/:id', verifyUser(['admin']), async (req, res) => {
+router.patch('/userupdate/:id', async (req, res) => {
     try {
         const { id } = req.params
         const { name, email, role } = req.body
@@ -144,10 +138,10 @@ router.patch('/userupdate/:id', verifyUser(['admin']), async (req, res) => {
             if (err) {
                 console.log(err)
                 return res.status(500).send('Sever error')
-            }
+            }            
 
             if (result.affectedRows == 0) {
-                res.status(404).send('User not found')
+                return res.status(404).send('User not found')
             }
 
             console.log('User updated successfuly')
@@ -161,7 +155,7 @@ router.patch('/userupdate/:id', verifyUser(['admin']), async (req, res) => {
     }
 })
 
-router.delete('/userdelete/:id', verifyUser(['admin']), async (req, res) => {
+router.delete('/userdelete/:id', async (req, res) => {
     try {
         const { id } = req.params
         const now = new Date()

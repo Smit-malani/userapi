@@ -7,6 +7,7 @@ const fileUpload = require('express-fileupload')
 const userRoute = require('./routes/userRoutes')
 const categoryRoute = require('./routes/categoryRoutes')
 const productRoute = require('./routes/productRoutes') 
+const verifyUser = require('./middlewares/auth')
 
 async function startServer(){
     try {
@@ -25,6 +26,6 @@ startServer()
 app.use(express.json())
 app.use(fileUpload())
 
-app.use('/',userRoute)
-app.use('/category',categoryRoute)
-app.use('/product', productRoute)
+app.use('/user', verifyUser(['admin']), userRoute)
+app.use('/category', verifyUser(['admin', 'sub-admin']), categoryRoute)
+app.use('/product',verifyUser(['admin', 'sub-admin']), productRoute)

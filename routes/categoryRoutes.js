@@ -3,7 +3,7 @@ const router = express.Router();
 const dbConnect = require('../config/dbConnect');
 const verifyUser = require('../middlewares/auth');
 
-router.post('/addcategory', verifyUser(['admin', 'sub-admin']), async (req, res) => {
+router.post('/addcategory', async (req, res) => {
     try {
         const { name } = req.body
         if (!name) {
@@ -30,7 +30,7 @@ router.post('/addcategory', verifyUser(['admin', 'sub-admin']), async (req, res)
     }
 })
 
-router.patch('/updatecategory/:id', verifyUser(['admin', 'sub-admin']), async (req, res) => {
+router.patch('/updatecategory/:id', async (req, res) => {
     try {
         const { id } = req.params
         const { name } = req.body
@@ -77,7 +77,7 @@ router.patch('/updatecategory/:id', verifyUser(['admin', 'sub-admin']), async (r
     }
 })
 
-router.delete('/deletecategory/:id', verifyUser(['admin', 'sub-admin']), async (req, res) => {
+router.delete('/deletecategory/:id', async (req, res) => {
     try {
         const { id } = req.params
 

@@ -4,10 +4,11 @@ const dbConnect = require('../config/dbConnect');
 const verifyUser = require('../middlewares/auth');
 const fs = require('fs')
 
-router.post('/addproduct', verifyUser(['admin', 'sub-admin']), async (req, res) => {
-    try {
+router.post('/addproduct', async (req, res) => {
+    try {        
         const { name, price, qty, category_id } = req.body
         const { product_img } = req.files
+       
 
         if (!name || !price || !qty || !product_img || !category_id) {
             return res.status(400).send('All the fields are required')
@@ -42,7 +43,7 @@ router.post('/addproduct', verifyUser(['admin', 'sub-admin']), async (req, res) 
     }
 })
 
-router.patch('/updateproduct/:id', verifyUser(['admin', 'sub-admin']), async (req, res) => {
+router.patch('/updateproduct/:id', async (req, res) => {
     try {
         const { id } = req.params
         const { name, price, qty, category_id } = req.body
@@ -114,8 +115,13 @@ router.patch('/updateproduct/:id', verifyUser(['admin', 'sub-admin']), async (re
         connection.query(sql, setValue, (err, result) => {
             if (err) {
                 console.log(err)
-                return res.status(500).send('Error while updating data')
+                return res.status(500).send('server error')
             }
+
+            if (result.affectedRows == 0) {
+                return res.status(404).send('Product not found')
+            }
+            
             console.log('product updated successfully')
             res.status(200).send('Product updated successfully')
         })
@@ -126,7 +132,7 @@ router.patch('/updateproduct/:id', verifyUser(['admin', 'sub-admin']), async (re
     }
 })
 
-router.delete('/deleteproduct/:id', verifyUser(['admin', 'sub-admin']), async (req, res) => {
+router.delete('/deleteproduct/:id', async (req, res) => {
     try {
         const { id } = req.params
         const now = new Date()
@@ -153,18 +159,16 @@ router.delete('/deleteproduct/:id', verifyUser(['admin', 'sub-admin']), async (r
 
 router.get('/getproduct', async (req, res) => {
     try {
-        const connection = await dbConnect()
+        const connection = await dbConnect()        
 
-        connection.query('select * from product', (err, result) => {
-            const filterResult = result.filter((data) => !data.deleted_at)
-
+        connection.query('SELECT * FROM product WHERE deleted_at IS NULL', (err, result) => {
             if (err) {
                 console.log(err)
-                return res.status(500).send('Error while fetching Product')
+                return res.status(500).send('Server error')
             }
 
             console.log('product fetched successfully')
-            res.status(200).json({ message: 'Product fetch successfully', result: filterResult })
+            res.status(200).json({ message: 'Product fetch successfully', result })
         })
 
     } catch (err) {
